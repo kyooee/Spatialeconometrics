@@ -1,0 +1,264 @@
+---
+title: "Untitled"
+author: "姜瀛"
+date: "2019年1月8日"
+output: html_document
+---
+
+```{r}
+library(tidyverse)
+library(tseries)
+library(readxl)
+library(plm)
+library(panelvar)
+library(spdep)
+library(splm)
+library(sp)
+```
+
+```{r}
+setwd("D:/R/期末论文")
+data<-read_excel("总表.xlsx",sheet = "Sheet2")
+data$lnY<-log(data$gdp)
+data$lnD<-log(data$investment)
+data$lnL<-log(data$employee)
+data$lnF<-log(data$fdi)
+data$IV<-log(data$gdp1)
+```
+
+```{r}
+Wg<-read_excel("空间权重矩阵.xlsx", sheet = "W")
+mat2<- as.matrix(Wg)
+mat3<- mat2listw(Wg1)
+#Dm<-read_excel("空间权重矩阵.xlsx", sheet = "D")
+#Dm1<- as.matrix(Dm)
+#W=crossprod(Wg1,Dm1)
+#W
+```
+
+
+
+```{r}
+ggplot(data, aes(x=year,y=gdp, colour=city))+geom_smooth() +geom_point()
+ggplot(data, aes(x=year,y=investment, colour=city))+geom_smooth() +geom_point()
+ggplot(data, aes(x=year,y=employee, colour=city))+geom_smooth() +geom_point()
+ggplot(data, aes(x=year,y=fdi, colour=city))+geom_smooth() +geom_point()
+```
+
+```{r}
+ggplot(data, aes(x=fdi, y=gdp, colour=city))+geom_smooth(method = "lm") +geom_point()#+facet_wrap(~city, nrow = 5)
+ggplot(data, aes(x=fdi, y=gdp))+geom_smooth(method = "lm") +geom_point()
+```
+
+```{r}
+pdata=pdata.frame(data,index=c("city","year"))
+````
+
+```{r}
+purtest(object=log(pdata[,3]),exo="intercept",test="levinlin",lags="AIC",pmax=3)
+purtest(object=log(pdata[,3]),exo="intercept",test="ips",lags="AIC",pmax=3)
+purtest(object=log(pdata[,3]),exo="intercept",test="madwu",lags="AIC",pmax=3)
+
+
+purtest(object=log(pdata[,4]),exo="intercept",test="levinlin",lags="AIC",pmax=3)
+purtest(object=log(pdata[,4]),exo="intercept",test="ips",lags="AIC",pmax=3)
+purtest(object=log(pdata[,4]),exo="intercept",test="madwu",lags="AIC",pmax=3)
+
+purtest(object=log(pdata[,5]),exo="intercept",test="levinlin",lags="AIC",pmax=3)
+purtest(object=log(pdata[,5]),exo="intercept",test="ips",lags="AIC",pmax=3)
+purtest(object=log(pdata[,5]),exo="intercept",test="madwu",lags="AIC",pmax=3)
+
+purtest(object=log(pdata[,6]),exo="intercept",test="levinlin",lags="AIC",pmax=3)
+purtest(object=log(pdata[,6]),exo="intercept",test="ips",lags="AIC",pmax=3)
+purtest(object=log(pdata[,6]),exo="intercept",test="madwu",lags="AIC",pmax=3)
+
+purtest(object=log(pdata[,7]),exo="intercept",test="levinlin",lags="AIC",pmax=3)
+purtest(object=log(pdata[,7]),exo="intercept",test="ips",lags="AIC",pmax=3)
+purtest(object=log(pdata[,7]),exo="intercept",test="madwu",lags="AIC",pmax=3)
+```
+```{r}
+z1<-plm(lnY~lnF+lnD+lnL,data = pdata,model = "pool")
+z2<-plm(lnY~lnF+lnD+lnL,data = pdata,model = "within")
+z3<-pvcm(lnY~lnF+lnD+lnL,data = pdata,model = "within")
+pooltest(z1,z2)
+pooltest(z1,z3)
+pooltest(z2,z3)
+```
+
+```{r}
+z1<-plm(lnY~lnF+lnD+lnL,data = pdata,model = "pool")
+z2<-plm(lnY~lnF+lnD+lnL,data = pdata,model = "within")
+z3<-plm(lnY~lnF+lnD+lnL,data = pdata,model = "random",random.method ="swar")
+pFtest(z2,z1)
+phtest(z3,z2)
+summary(z1)
+summary(z2)
+summary(z3)
+```
+
+```{r}
+z1<-plm(lnY~lnF+lnD+lnL,data = pdata,model = "pool")
+summary(z1)
+z2<-plm(lnY~lnF+lnD+lnL,data = pdata,effect = "individual",model = "within")
+summary(z2)
+z3<-plm(lnY~lnF+lnD+lnL,data = pdata,effect = "time",model = "within")
+summary(z3)
+z4<-plm(lnY~lnF+lnD+lnL,data = pdata,effect = "twoways",model = "within")
+summary(z4)
+z5<-plm(lnY~lnF+lnD+lnL,data = pdata,model = "random",effect = "twoways")
+summary(z5)
+```
+
+```{r}
+data_2007 <- data[data$year %in% c("2007"),]
+mornor_2007 <- moran.test(data_2007$lnY, listw = mat3)
+mornor_2007
+moran.mc(data_2007$lnY,listw = mat3,99)
+
+data_2008 <- data[data$year %in% c("2008"),]
+mornor_2008 <- moran.test(data_2008$lnY, listw = mat3)
+mornor_2008
+moran.mc(data_2008$lnY,listw = mat3,99)
+
+data_2009 <- data[data$year %in% c("2009"),]
+mornor_2009 <- moran.test(data_2009$lnY, listw = mat3)
+mornor_2009
+moran.mc(data_2009$lnY,listw = mat3,99)
+
+data_2010 <- data[data$year %in% c("2010"),]
+mornor_2010 <- moran.test(data_2010$lnY, listw = mat3)
+mornor_2010
+moran.mc(data_2010$lnY,listw = mat3,99)
+
+data_2011 <- data[data$year %in% c("2011"),]
+mornor_2011 <- moran.test(data_2011$lnY, listw = mat3)
+mornor_2011
+moran.mc(data_2011$lnY,listw = mat3,99)
+
+data_2012<- data[data$year %in% c("2012"),]
+mornor_2012 <- moran.test(data_2012$lnY, listw = mat3)
+mornor_2012
+moran.mc(data_2012$lnY,listw = mat3,99)
+
+
+data_2013<- data[data$year %in% c("2013"),]
+mornor_2013<- moran.test(data_2013$lnY, listw = mat3)
+mornor_2013
+moran.mc(data_2013$lnY,listw = mat3,99)
+
+data_2014<- data[data$year %in% c("2014"),]
+mornor_2014<- moran.test(data_2014$lnY, listw = mat3)
+mornor_2014
+moran.mc(data_2014$lnY,listw = mat3,99)
+
+data_2015<- data[data$year %in% c("2015"),]
+mornor_2015<- moran.test(data_2015$lnY, listw = mat3)
+mornor_2015
+moran.mc(data_2015$lnY,listw = mat3,99)
+
+data_2016<- data[data$year %in% c("2016"),]
+mornor_2016<- moran.test(data_2013$lnY, listw = mat3)
+mornor_2016
+moran.mc(data_2016$lnY,listw = mat3,99)
+```
+
+```{r}
+form=lnY~lnF+lnD+lnL
+test5 <- sphtest(x = form, data = data, listw = mat3, spatial.model = "error", method = "ML")
+test5
+test6 <- sphtest(x = form, data = data, listw = mat3, spatial.model = "lag", method = "ML")
+test6
+Test7 <- sphtest(x = form, data = data, listw = mat3, spatial.model = "sarar", method = "ML")
+Test7
+```
+
+```{r}
+semremod1 <- spml(formula = form, data = data, listw = mat2, model = "pooling",lag = TRUE,spatial.error="none")
+summary(semremod1)
+
+semremod2 <- spml(formula = form, data = data, listw = mat2, model = "within", effect = "individual",lag = T,spatial.error="none")
+summary(semremod2)
+
+semremod3 <- spml(formula = form, data = data, listw = mat2, model = "within", effect = "time",lag = T,spatial.error="none")
+summary(semremod3)
+
+semremod4 <- spml(formula = form, data = data, listw = mat2, model = "within", effect = "twoway",lag = T,spatial.error="none")
+summary(semremod4)
+
+
+
+semremod5 <- spml(formula = form, data = data, listw = mat2, model = "random", effect = "individual",lag = T,spatial.error="none")
+summary(semremod5)
+```
+
+```{r}
+semremod1 <- spml(formula = form, data = data, listw = mat3, model = "pooling",lag = F,spatial.error="b")
+summary(semremod1)
+
+semremod2 <- spml(formula = form, data = data, listw = mat3, model = "within", effect = "individual",lag = F,spatial.error="b")
+summary(semremod2)
+
+semremod3 <- spml(formula = form, data = data, listw = mat3, model = "within", effect = "time",lag = F,spatial.error="b")
+summary(semremod3)
+
+semremod4 <- spml(formula = form, data = data, listw = mat3, model = "within", effect = "twoway",lag = F,spatial.error="b")
+summary(semremod4)
+
+
+
+semremod5 <- spml(formula = form, data = data, listw = mat3, model = "random", effect = "individual",lag = F,spatial.error="b")
+summary(semremod5)
+
+
+```
+```{r}
+semremod1 <- spml(formula = form, data = data, listw = mat3, model = "pooling",lag = T,spatial.error="b")
+summary(semremod1)
+
+semremod2 <- spml(formula = form, data = data, listw = mat3, model = "within", effect = "individual",lag = T,spatial.error="b")
+summary(semremod2)
+
+semremod3 <- spml(formula = form, data = data, listw = mat3, model = "within", effect = "time",lag = T,spatial.error="b")
+summary(semremod3)
+
+semremod4 <- spml(formula = form, data = data, listw = mat3, model = "within", effect = "twoway",lag = T,spatial.error="b")
+summary(semremod4)
+
+
+
+semremod5 <- spml(formula = form, data = data, listw = mat3, model = "random", effect = "individual",lag = T,spatial.error="b")
+summary(semremod5)
+
+
+```
+
+
+```{r}
+semremod1 <- spml(formula = form, data = data, listw = mat3, model = "random", effect = "individual",lag = TRUE,spatial.error="none")
+summary(semremod1)
+```
+
+```{r}
+z1<-pgmm((dynformula(lnY~lnF+lnD+lnL,lag=list(1,1,0,0)),pdata,effect="individual",model = "twosteps"))
+summary(z1)
+z2<-pgmm((dynformula(lnY~lnF+lnD+lnL,lag=list(1,1,0,0)),pdata,effect="twoway",model = "twosteps"))
+summary(z2)
+```
+
+```{r}
+z1<-pgmm(lnY~lag(lnY,1)+lag(lnF,0:1)+lnD+lnL| lag(lnY, 2:99) + lag(lnF, 
+    2:99) + lag(lnD, 2:99)+lag(lnL, 2:99),data=pdata,effect="individual",model = "twosteps")
+
+```
+
+
+
+```{r}
+## Blundell and Bond (1998) table 4 (cf. DPD for OX p. 12 col. 4)
+z2 <- pgmm(log(emp) ~ lag(log(emp), 1)+ lag(log(wage), 0:1) +
+           lag(log(capital), 0:1) | lag(log(emp), 2:99) +
+           lag(log(wage), 2:99) + lag(log(capital), 2:99),        
+           data = EmplUK, effect = "twoways", model = "onestep", 
+           transformation = "ld")
+summary(z2, robust = TRUE)
+```
